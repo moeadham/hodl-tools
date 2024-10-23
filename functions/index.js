@@ -10,11 +10,10 @@
 
 import {onRequest} from "firebase-functions/v2/https";
 import logger from "firebase-functions/logger";
-import axios from "axios";
 import {defineString} from "firebase-functions/params";
-const BITQUERY_API_KEY = defineString("BITQUERY_API_KEY");
+const HELIUS_API_KEY = defineString("HELIUS_API_KEY");
 
-export const solBalance = onRequest((request, response) => {
+export const solBalance = onRequest(async (request, response) => {
   logger.debug(`Request received: ${JSON.stringify(request.query)}`);
   let addresses = request.query.addresses;
   logger.debug("addresses", addresses);
@@ -35,44 +34,46 @@ export const solBalance = onRequest((request, response) => {
     return;
   }
 
+  const balances = [];
+  for (const address of addresses) {
+    const balance = await getAssetsWithNativeBalance(address);
+    balances.push(balance);
+  }
+  const totalBalance = balances.reduce((sum, balance) => sum + balance, 0);
 
-  // Continue processing with the valid addresses array
-  // Prepare the GraphQL query and variables
-  const query = `
-    query ($addresses: [String!]!) {
-      solana(network: solana) {
-        address(address: {in: $addresses}) {
-          address
-          balance
-        }
-      }
-    }
-  `;
+  response.set("Content-Type", "text/plain");
+  response.send(totalBalance.toString());
+});
 
-  let variables = {addresses};
-  variables = JSON.stringify(variables);
-  logger.debug("variables", variables);
 
-  // Make the API request to Bitquery
-  axios.post("https://graphql.bitquery.io", {
-    query: query,
-    variables: JSON.stringify(variables),
-  }, {
+const getAssetsWithNativeBalance = async (address) => {
+  const url = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY.value()}`;
+  logger.debug(`Getting balance for ${address}`);
+  const response = await fetch(url, {
+    method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "X-API-KEY": BITQUERY_API_KEY.value(),
     },
-  })
-      .then((apiResponse) => {
-        const balances = apiResponse.data.data.solana.address;
-        const totalBalance = balances.reduce((sum, account) => sum + account.balance, 0);
-        logger.debug(`Total balance: ${totalBalance}`);
-        response.set("Content-Type", "text/plain");
-        response.send(totalBalance.toString());
-        return;
-      })
-      .catch((error) => {
-        logger.error("Error fetching SOL balances:", error);
-        response.status(500).send("Error fetching SOL balances");
-      });
-});
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      id: "my-id",
+      method: "getAssetsByOwner",
+      params: {
+        ownerAddress: address,
+        displayOptions: {
+          showFungible: false,
+          showNativeBalance: true,
+        },
+      },
+    }),
+  });
+  if (!response.ok) {
+    const errorMessage = `Error fetching balance for ${address}: ${response.status} ${response.statusText}`;
+    logger.error(errorMessage);
+    throw new Error(errorMessage);
+  }
+  const {result} = await response.json();
+  const balance = result.nativeBalance.lamports / 10 ** 9;
+  logger.debug(`Balance for ${address}: ${balance}`);
+  return balance;
+};

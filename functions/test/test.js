@@ -28,6 +28,8 @@ describe("Hodl tools tests.", () => {
         .query({addresses: ["4LNnfXdNrnR72mgJdPp6iw3FD8BccX2dPc3iofNxN8VY",
           "CU3JXqmgde95HgWnepAZctb3qeHXA7eT3qv6LQWB4Egz",
           "HRokvtG4fCSx9gcbt4Qj8YS8rGvQQ3EtxdLmRyWdK9g7",
+          "2YyVPpbV3yGSvJJRr5Zf5CzLCGurYXVXGDTRfPBCGguV",
+          "6XrSRfg6ZCL54B4P34HCkiwUsCGexPHy2YxhUTKCnMgJ",
           "Gy39eu4SNp4qtSUEXg6HJ9GLd1t5XdNCw2WoBg1FWyd4",
         ]});
     const result = response.text;
