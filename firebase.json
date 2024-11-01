@@ -26,6 +26,26 @@
       {
         "source": "/sol/balance/",
         "function": "solBalance"
+      },
+      {
+        "source": "/metrics/",
+        "function": "getMetrics"
+      },
+      {
+        "source": "/admin/addBalanceAddresses",
+        "function": "addBalanceAddresses"
+      },
+      {
+        "source": "/admin/addValidators",
+        "function": "addValidators"
+      },
+      {
+        "source": "/admin/addBtcBalance",
+        "function": "addBtcBalance"
+      },
+      {
+        "source": "/admin/populateCache",
+        "function": "populateCache"
       }
     ]
   },
@@ -39,6 +59,9 @@
     "ui": {
       "enabled": true
     },
-    "singleProjectMode": true
+    "singleProjectMode": true,
+    "database": {
+      "port": 9000
+    }
   }
 }
