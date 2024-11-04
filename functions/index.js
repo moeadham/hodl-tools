@@ -11,6 +11,7 @@
  */
 
 import {onRequest} from "firebase-functions/v2/https";
+import {onSchedule} from "firebase-functions/v2/scheduler";
 import logger from "firebase-functions/logger";
 import {defineString} from "firebase-functions/params";
 import {getDatabase, getDatabaseWithUrl} from "firebase-admin/database";
@@ -18,38 +19,6 @@ import {initializeApp} from "firebase-admin/app";
 const app = initializeApp();
 const HELIUS_API_KEY = defineString("HELIUS_API_KEY");
 const ADMIN_API_KEY = defineString("ADMIN_API_KEY");
-
-export const solBalance = onRequest(async (request, response) => {
-  logger.debug(`Request received: ${JSON.stringify(request.query)}`);
-  let addresses = request.query.addresses;
-  logger.debug("addresses", addresses);
-  if (!addresses) {
-    logger.error(`Missing "addresses" query parameter. Please provide an address or an array of addresses.`);
-    response.status(400).send("Missing \"addresses\" query parameter. Please provide an address or an array of addresses.");
-    return;
-  }
-
-  // Ensure addresses is always an array
-  if (!Array.isArray(addresses)) {
-    addresses = [addresses];
-  }
-
-  if (addresses.length === 0) {
-    logger.error("The \"addresses\" array is empty. Please provide at least one address.");
-    response.status(400).send("The \"addresses\" array is empty. Please provide at least one address.");
-    return;
-  }
-
-  const balances = [];
-  for (const address of addresses) {
-    const balance = await getAssetsWithNativeBalance(address);
-    balances.push(balance);
-  }
-  const totalBalance = balances.reduce((sum, balance) => sum + balance, 0);
-
-  response.set("Content-Type", "text/plain");
-  response.send(totalBalance.toString());
-});
 
 export const addBalanceAddresses = onRequest(async (request, response) => {
   await validateOnRequestAdmin(request);
@@ -95,7 +64,13 @@ async function updateCache() {
   for (const [name, address] of Object.entries(addresses)) {
     await updateAddressBalance(address);
   }
+  await storeData({ref: "cache/lastUpdated", data: Date.now()});
 }
+
+export const updateCacheOnSchedule = onSchedule("*/15 * * * *", async (event) => {
+  await updateCache();
+  logger.debug("Cache updated");
+});
 
 
 export const getMetrics = onRequest(async (request, response) => {
@@ -128,6 +103,12 @@ export const getMetrics = onRequest(async (request, response) => {
     },
   };
   response.send(metrics);
+});
+
+export const solBalance = onRequest(async (request, response) => {
+  const solBalance = await getPortfolioSolBalanceCached();
+  response.set("Content-Type", "text/plain");
+  response.send(solBalance.toString());
 });
 
 // Helius APIs
@@ -189,20 +170,24 @@ const getPrice = async (crypto) => {
 
 // CADUSD:
 const getCadUsdPrice = async () => {
-  const url = "https://bcd-api-dca-ipa.cbsa-asfc.cloud-nuage.canada.ca/exchange-rate-lambda/exchange-rates";
+  const url = "https://www.bankofcanada.ca/valet/fx_rss/FXUSDCAD";
   const response = await fetch(url);
   if (!response.ok) {
     const errorMessage = `Error fetching CAD/USD price: ${response.status} ${response.statusText}`;
     logger.error(errorMessage);
     throw new Error(errorMessage);
   }
-  const data = await response.json();
-  logger.debug(`CAD/USD price data: ${JSON.stringify(data).slice(0, 50)}`);
-  const cadUsdRate = data.ForeignExchangeRates.find(
-      (rate) => rate.ExchangeRateId === 5734780,
-  ).Rate;
+  const xmlText = await response.text();
+  // Extract the exchange rate value using regex
+  const match = xmlText.match(/<cb:value decimals="4">([0-9.]+)<\/cb:value>/);
+  if (!match) {
+    const errorMessage = "Could not find exchange rate in XML response";
+    logger.error(errorMessage);
+    throw new Error(errorMessage);
+  }
+  const cadUsdRate = Number(match[1]);
   logger.debug(`CAD/USD price: ${cadUsdRate}`);
-  return Number(cadUsdRate);
+  return Number((cadUsdRate).toFixed(4));
 };
 
 
