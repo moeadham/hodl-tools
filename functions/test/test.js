@@ -6,8 +6,16 @@ import chaiHttp from "chai-http";
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-const APP_URL = "http://127.0.0.1:5005";
-const TEST_API_KEY = "hodl-api-key-test";
+const TEST = false;
+let APP_URL;
+let TEST_API_KEY;
+if (TEST) {
+  APP_URL = "http://127.0.0.1:5005";
+  TEST_API_KEY = "hodl-api-key-test";
+} else {
+  APP_URL = "https://hodl-tools.web.app";
+  TEST_API_KEY = process.env.API_KEY;
+}
 const DEFAULT_TIMEOUT = 10000;
 describe("Hodl tools tests.", () => {
   const populateCache = false;
