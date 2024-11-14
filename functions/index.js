@@ -45,6 +45,20 @@ export const addBtcBalance = onRequest(async (request, response) => {
   response.send("OK");
 });
 
+export const addSolBalance = onRequest(async (request, response) => {
+  await validateOnRequestAdmin(request);
+  const solBalance = request.body.solBalance;
+  await storeData({ref: `solBalance`, data: solBalance});
+  response.send("OK");
+});
+
+export const addDisclaimer = onRequest(async (request, response) => {
+  await validateOnRequestAdmin(request);
+  const disclaimer = request.body.disclaimer;
+  await storeData({ref: `cache/disclaimer`, data: disclaimer});
+  response.send("OK");
+});
+
 export const populateCache = onRequest(async (request, response) => {
   await validateOnRequestAdmin(request);
   await updateCache();
@@ -59,11 +73,11 @@ async function updateCache() {
   for (const [name, voteAddress] of Object.entries(validators)) {
     await updateValidatorInfo(voteAddress);
   }
-  const addresses = await getBalanceAddressesCached();
-  logger.debug(`Addresses: ${JSON.stringify(addresses)}`);
-  for (const [name, address] of Object.entries(addresses)) {
-    await updateAddressBalance(address);
-  }
+  // const addresses = await getBalanceAddressesCached();
+  // logger.debug(`Addresses: ${JSON.stringify(addresses)}`);
+  // for (const [name, address] of Object.entries(addresses)) {
+  //   await updateAddressBalance(address);
+  // }
   await storeData({ref: "cache/lastUpdated", data: Date.now()});
 }
 
@@ -74,12 +88,13 @@ export const updateCacheOnSchedule = onSchedule("*/15 * * * *", async (event) =>
 
 
 export const getMetrics = onRequest(async (request, response) => {
-  const solBalance = await getPortfolioSolBalanceCached();
+  const solBalance = await getSolBalanceCached();
   const delegatedBalance = await getValidatorBalanceCached();
   const solPrice = await getSolPriceCached();
   const btcPrice = await getBtcPriceCached();
   const btcBalance = await getBtcBalanceCached();
   const cadUsdPrice = await getCadUsdPriceCached();
+  const disclaimer = await getDisclaimerCached();
   const metrics = {
     solPrice,
     btcPrice,
@@ -95,6 +110,7 @@ export const getMetrics = onRequest(async (request, response) => {
         valueCad: Number((btcBalance * btcPrice * cadUsdPrice).toFixed(2)),
         valueUsd: Number((btcBalance * btcPrice).toFixed(2)),
       },
+      disclaimer,
     },
     validators: {
       totalDelegatedSol: delegatedBalance,
@@ -233,6 +249,12 @@ const getSolPriceCached = async () => {
   return solPrice;
 };
 
+// Get Disclaimer cached
+const getDisclaimerCached = async () => {
+  const disclaimer = await getData({ref: "cache/disclaimer"});
+  return disclaimer;
+};
+
 // Get BTC price cached
 const getBtcPriceCached = async () => {
   const btcPrice = await getData({ref: "cache/btcPrice"});
@@ -254,6 +276,11 @@ const updateBtcPrice = async () => {
 const getBtcBalanceCached = async () => {
   const btcBalance = await getData({ref: "btcBalance"});
   return btcBalance;
+};
+
+const getSolBalanceCached = async () => {
+  const solBalance = await getData({ref: "solBalance"});
+  return solBalance;
 };
 
 // Get CADUSD price cached

@@ -6,7 +6,7 @@ import chaiHttp from "chai-http";
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-const TEST = false;
+const TEST = true;
 let APP_URL;
 let TEST_API_KEY;
 if (TEST) {
@@ -18,7 +18,7 @@ if (TEST) {
 }
 const DEFAULT_TIMEOUT = 10000;
 describe("Hodl tools tests.", () => {
-  const populateCache = false;
+  const populateCache = true;
   if (populateCache) {
     it(`Add Balance Addresses`, async function() {
       this.timeout(DEFAULT_TIMEOUT);
@@ -55,7 +55,25 @@ describe("Hodl tools tests.", () => {
           .request(APP_URL)
           .post("/admin/addBtcBalance")
           .set("API-KEY", TEST_API_KEY)
-          .send({btcBalance: 3.168003+20});
+          .send({btcBalance: 23.168});
+      expect(response).to.have.status(200);
+    });
+    it(`Add SOL Balance`, async function() {
+      this.timeout(DEFAULT_TIMEOUT);
+      const response = await chai
+          .request(APP_URL)
+          .post("/admin/addSolBalance")
+          .set("API-KEY", TEST_API_KEY)
+          .send({solBalance: 130125.2186});
+      expect(response).to.have.status(200);
+    });
+    it(`Add Disclaimer`, async function() {
+      this.timeout(DEFAULT_TIMEOUT);
+      const response = await chai
+          .request(APP_URL)
+          .post("/admin/addDisclaimer")
+          .set("API-KEY", TEST_API_KEY)
+          .send({disclaimer: "* as of press release dated October 29, 2024"});
       expect(response).to.have.status(200);
     });
     it(`Populate Cache`, async function() {

@@ -44,6 +44,14 @@
         "function": "addBtcBalance"
       },
       {
+        "source": "/admin/addSolBalance",
+        "function": "addSolBalance"
+      },
+      {
+        "source": "/admin/addDisclaimer",
+        "function": "addDisclaimer"
+      },
+      {
         "source": "/admin/populateCache",
         "function": "populateCache"
       }
