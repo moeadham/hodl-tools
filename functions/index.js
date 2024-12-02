@@ -73,11 +73,11 @@ async function updateCache() {
   for (const [name, voteAddress] of Object.entries(validators)) {
     await updateValidatorInfo(voteAddress);
   }
-  // const addresses = await getBalanceAddressesCached();
-  // logger.debug(`Addresses: ${JSON.stringify(addresses)}`);
-  // for (const [name, address] of Object.entries(addresses)) {
-  //   await updateAddressBalance(address);
-  // }
+  const addresses = await getBalanceAddressesCached();
+  logger.debug(`Addresses: ${JSON.stringify(addresses)}`);
+  for (const [name, address] of Object.entries(addresses)) {
+    await updateAddressBalance(address);
+  }
   await storeData({ref: "cache/lastUpdated", data: Date.now()});
 }
 
@@ -88,7 +88,7 @@ export const updateCacheOnSchedule = onSchedule("*/15 * * * *", async (event) =>
 
 
 export const getMetrics = onRequest(async (request, response) => {
-  const solBalance = await getSolBalanceCached();
+  const solBalance = await getSolBalanceCached(); // Static number from a press release.
   const delegatedBalance = await getValidatorBalanceCached();
   const solPrice = await getSolPriceCached();
   const btcPrice = await getBtcPriceCached();

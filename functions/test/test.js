@@ -6,7 +6,7 @@ import chaiHttp from "chai-http";
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-const TEST = true;
+const TEST = false;
 let APP_URL;
 let TEST_API_KEY;
 if (TEST) {
