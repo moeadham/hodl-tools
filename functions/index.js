@@ -20,7 +20,7 @@ const app = initializeApp();
 const HELIUS_API_KEY = defineString("HELIUS_API_KEY");
 const ADMIN_API_KEY = defineString("ADMIN_API_KEY");
 
-export const addBalanceAddresses = onRequest(async (request, response) => {
+export const addBalanceAddresses = onRequest({cors: true}, async (request, response) => {
   await validateOnRequestAdmin(request);
   const addresses = request.body.addresses;
   for (const address of addresses) {
@@ -29,7 +29,7 @@ export const addBalanceAddresses = onRequest(async (request, response) => {
   response.send("OK");
 });
 
-export const addValidators = onRequest(async (request, response) => {
+export const addValidators = onRequest({cors: true}, async (request, response) => {
   await validateOnRequestAdmin(request);
   const validators = request.body.validators;
   for (const validator of validators) {
@@ -38,28 +38,28 @@ export const addValidators = onRequest(async (request, response) => {
   response.send("OK");
 });
 
-export const addBtcBalance = onRequest(async (request, response) => {
+export const addBtcBalance = onRequest({cors: true}, async (request, response) => {
   await validateOnRequestAdmin(request);
   const btcBalance = request.body.btcBalance;
   await storeData({ref: `btcBalance`, data: btcBalance});
   response.send("OK");
 });
 
-export const addSolBalance = onRequest(async (request, response) => {
+export const addSolBalance = onRequest({cors: true}, async (request, response) => {
   await validateOnRequestAdmin(request);
   const solBalance = request.body.solBalance;
   await storeData({ref: `solBalance`, data: solBalance});
   response.send("OK");
 });
 
-export const addDisclaimer = onRequest(async (request, response) => {
+export const addDisclaimer = onRequest({cors: true}, async (request, response) => {
   await validateOnRequestAdmin(request);
   const disclaimer = request.body.disclaimer;
   await storeData({ref: `cache/disclaimer`, data: disclaimer});
   response.send("OK");
 });
 
-export const populateCache = onRequest(async (request, response) => {
+export const populateCache = onRequest({cors: true}, async (request, response) => {
   await validateOnRequestAdmin(request);
   await updateCache();
   response.send("OK");
@@ -87,7 +87,7 @@ export const updateCacheOnSchedule = onSchedule("*/15 * * * *", async (event) =>
 });
 
 
-export const getMetrics = onRequest(async (request, response) => {
+export const getMetrics = onRequest({cors: true}, async (request, response) => {
   const solBalance = await getSolBalanceCached(); // Static number from a press release.
   const delegatedBalance = await getValidatorBalanceCached();
   const solPrice = await getSolPriceCached();
@@ -121,7 +121,7 @@ export const getMetrics = onRequest(async (request, response) => {
   response.send(metrics);
 });
 
-export const solBalance = onRequest(async (request, response) => {
+export const solBalance = onRequest({cors: true}, async (request, response) => {
   const solBalance = await getPortfolioSolBalanceCached();
   response.set("Content-Type", "text/plain");
   response.send(solBalance.toString());
